@@ -8,7 +8,6 @@ export default function App() {
   //   console.log(start, end, end + 1);
   // }, [end, start]);
 
-  // hard coded to veelka currently
   const english_to_russian = (word) => {
     var russian = "";
     for (var i = 0; i < word.length; i++) {
@@ -63,7 +62,13 @@ export default function App() {
           i += 1;
         } else if (word[i] == "я") russian += "я";
         else russian += "й";
-      } else if (word[i] == " ") russian += " ";
+      } else if (
+        word[i] == " " ||
+        word[i] == "?" ||
+        word[i] == "." ||
+        word[i] == ","
+      )
+        russian += word[i];
     }
     return russian;
   };
