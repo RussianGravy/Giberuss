@@ -4,9 +4,10 @@ export default function App() {
   const [start, setStart] = useState(-1);
   const [end, setEnd] = useState(-1);
 
-  // useEffect(() => {
-  //   console.log(start, end, end + 1);
-  // }, [end, start]);
+  useEffect(() => {
+    console.log("start: ", start);
+    console.log("end: ", end);
+  }, [start, end]);
 
   const english_to_russian = (word) => {
     var russian = "";
@@ -77,11 +78,23 @@ export default function App() {
     <>
       <h1>Gibberuss</h1>
       <input
+        onClick={(e) => {
+          const pos = e.currentTarget.selectionStart;
+          if (pos) {
+            setStart(pos);
+            setEnd(pos);
+          } else {
+            setStart(-1);
+            setEnd(-1);
+          }
+        }}
         onChange={async (e) => {
+          let inputTag = e.currentTarget;
+
           let tStart = start;
           let tEnd = end;
 
-          let c = e.currentTarget.value;
+          let c = inputTag.value;
           if (c.length == 0) {
             tStart = tEnd = -1;
             setStart(tStart);
@@ -101,25 +114,14 @@ export default function App() {
           }
 
           if (c[tEnd] == " ") {
-            let new_word = c.substring(tStart, tEnd);
-            let old_length = new_word.length;
-            new_word = english_to_russian(new_word);
-            // some russian characters are made by combining two english letters
-            // which shortens the length of the word
-            if (new_word.length < old_length) {
-              tEnd -= old_length - new_word.length;
-            }
-            let russian_content =
-              c.substring(0, tEnd - new_word.length) + new_word + " ";
-            e.currentTarget.value = russian_content;
+            console.log("hit a space!!");
+            let old_word = c.substring(tStart, tEnd);
+            let new_word = english_to_russian(old_word);
+            inputTag.setRangeText(new_word, tStart, tEnd);
+            tEnd -= old_word.length - new_word.length;
+            tEnd += 1;
             tStart = tEnd;
           }
-          //debug log
-          console.log(
-            "s | e | c\n",
-            "-----------\n",
-            tStart + " | " + tEnd + " | " + e.currentTarget.value
-          );
 
           setStart(tStart);
           setEnd(tEnd);
