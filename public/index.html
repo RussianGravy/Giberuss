@@ -1,9 +1,21 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script src="../dist/main.js"></script>
+    <h1>Gibbiruss</h1>
+    <h4>Live Input</h4>
+    <section>
+      <label>OFF</label>
+      <input id="toggle" type="range" min="0" max="1" />
+      <label>ON</label>
+    </section>
+    <h4>Convert Here & Copy</h4>
+    <section>
+      <input type="text" />
+      <button><img height="20px" src="img/copy_icon.png" /></button>
+    </section>
+    <script src="../dist/bundled_index.js" type="module"></script>
   </body>
 </html>

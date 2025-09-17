@@ -1,0 +1,10 @@
+section {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 60%;
+}
+
+#toggle {
+    width: auto;
+}

@@ -1,12 +1,20 @@
 {
-  "name": "Gibberuss",
+  "name": "Gibbiruss",
   "description": "English to Russian parser.",
   "version": "1.0",
+  "permissions": ["storage"],
+  "background": { "service_worker": "src/background.js", "type": "module" },
   "manifest_version": 3,
   "action": {
     "default_popup": "public/index.html",
     "default_icon": "icons/gibberuss_icon.png"
   },
+  "content_scripts": [
+    {
+      "js": ["dist/main.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
