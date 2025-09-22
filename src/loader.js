@@ -33,7 +33,7 @@ import { onClick, onInput, onKeyDown } from "./eventHandlers";
   }
 
   function scan(root = document) {
-    root.querySelector(SELECTORS).forEach(attatchTo);
+    root.querySelectorAll(SELECTORS).forEach(attatchTo);
   }
 
   function startObserver() {
@@ -75,7 +75,7 @@ import { onClick, onInput, onKeyDown } from "./eventHandlers";
     if (!enabled) return true;
     enabled = false;
     stopObserver();
-    document.querySelector(SELECTORS).forEach(dettachFrom);
+    document.querySelectorAll(SELECTORS).forEach(dettachFrom);
   }
 
   chrome.storage.session
