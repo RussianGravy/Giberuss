@@ -1,8 +1,20 @@
-import { onClick, onInput, onKeyDown } from "../src/eventHandlers";
+import { onInput } from "../src/eventHandlers";
 
 console.log("well you're in the bundle");
 
 const toggle = document.querySelector("#toggle");
+const textInput = document.querySelector('input[type="text"]');
+const copyButton = document.querySelector("#copy");
+
+const triggerGlow = () => {
+  textInput.classList.remove("glow");
+  void textInput.offsetWidth; // forces reflow
+  textInput.classList.add("glow");
+};
+
+const onClick = () => {
+  navigator.clipboard.writeText(textInput.value).then(triggerGlow);
+};
 
 chrome.storage.session.setAccessLevel({
   accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS",
@@ -27,10 +39,6 @@ toggle.addEventListener("change", async (e) => {
   console.log("toggleing to ", toggle.value);
 });
 
-console.log(document.querySelector("input"));
-
-document.querySelector('input[type="text"]').addEventListener("click", onClick);
 document.querySelector('input[type="text"]').addEventListener("input", onInput);
-document
-  .querySelector('input[type="text"]')
-  .addEventListener("keyDown", onKeyDown);
+
+copyButton.addEventListener("click", onClick);

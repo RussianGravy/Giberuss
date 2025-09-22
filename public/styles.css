@@ -8,3 +8,31 @@ section {
 #toggle {
     width: auto;
 }
+
+@keyframes glowFade {
+    0% {
+        color: black;
+    }
+
+    25% {
+        color: red;
+        outline-color: red;
+    }
+
+    50% {
+        color: black;
+    }
+
+    75% {
+        color: red;
+        outline-color: red;
+    }
+
+    100% {
+        color: black
+    }
+}
+
+.glow {
+    animation: glowFade 0.5s ease-in-out;
+}
