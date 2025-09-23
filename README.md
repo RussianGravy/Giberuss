@@ -17,7 +17,7 @@ Gibbiruss is a Chrome extension that provides live transliteration from English 
 
 ## Usage
 
-Start typing in English, and Gibbiruss will automatically convert your input to Russian characters.
+Type into any input field, textbox, or content-editable area in English, and Gibbiruss will automatically convert your input to Russian (Cyrillic) characters in real time.
 
 ## License
 
