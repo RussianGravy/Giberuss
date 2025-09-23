@@ -1,92 +1,78 @@
-import { onClick, onInput, onKeyDown } from "./eventHandlers";
+// minimal, focused-only wiring
+import { onInput } from "./eventHandlers";
 
 (() => {
   if (window.__myext_cs_installed__) return;
   window.__myext_cs_installed__ = true;
 
-  const SELECTORS =
-    'input[type="text"],input[type="email"],input[type="password"],[contenteditable="true"]';
+  const SELECTORS = [
+    "input:not([type])",
+    'input[type="text" i]',
+    'input[type="search" i]',
+    'input[type="email" i]',
+    'input[type="password" i]',
+    "textarea",
+    '[contenteditable]:not([contenteditable="false"])',
+  ].join(",");
 
-  const textFields = document.querySelectorAll(SELECTORS);
+  let currentEl = null;
 
-  const opts = { capture: true };
+  const isElement = (n) => n && n.nodeType === Node.ELEMENT_NODE;
 
-  const qualify = (n) => n && n.matches && n.matches();
+  const isEditable = (el) => {
+    if (!isElement(el)) return false;
+    if (el.matches?.("[contenteditable]")) {
+      const ce = el.getAttribute("contenteditable");
+      return ce !== "false";
+    }
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      return !el.disabled && !el.readOnly;
+    }
+    return false;
+  };
 
-  let attached = new WeakSet();
-  let enabled = false;
-  let observer = false;
+  const isVisible = (el) => {
+    const cs = el.ownerDocument?.defaultView?.getComputedStyle?.(el);
+    return !cs || (cs.visibility !== "hidden" && cs.display !== "none");
+  };
 
-  function attatchTo(el) {
-    if (attached.has(el)) return;
-    el.addEventListener("click", onClick, opts);
-    el.addEventListener("keydown", onKeyDown, opts);
-    el.addEventListener("input", onInput, opts);
-    attached.add(el);
-  }
-  function dettachFrom(el) {
-    if (!attached.has(el)) return;
-    el.removeEventListener("click", onClick, opt);
-    el.removeEventListener("keydown", onKeyDown, opts);
-    el.removeEventListener("input", onInput, opts);
-    attached.delete(el);
-  }
+  const qualify = (el) =>
+    isElement(el) && el.matches?.(SELECTORS) && isEditable(el) && isVisible(el);
 
-  function scan(root = document) {
-    root.querySelectorAll(SELECTORS).forEach(attatchTo);
-  }
-
-  function startObserver() {
-    if (observer) return;
-    observer = new MutationObserver((muts) => {
-      for (const m of muts) {
-        m.addedNodes?.forEach((node) => {
-          if (qualify(node)) attatchTo(node);
-          if (node.querySelectorAll)
-            node.querySelectorAll(SELECTORS).forEach(attatchTo);
-        });
-        m.removedNodes?.forEach((node) => {
-          if (qualify(node)) dettachFrom(node);
-          if (node.querySelectorAll)
-            node.querySelectorAll(SELECTORS).forEach(dettachFrom(node));
-        });
-      }
-    });
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-    });
+  function onFocusIn(e) {
+    console.log("New element in focus");
+    const target = e.composedPath ? e.composedPath()[0] : e.target;
+    if (target === currentEl || !qualify(target)) return; // already attached
+    currentEl = target;
+    console.log(target, " QUALIFIES!");
+    currentEl.addEventListener("input", onInput, { capture: true });
   }
 
-  function stopObserver() {
-    if (!observer) return;
-    observer.disconnect();
-    observer = null;
-  }
+  const enable = () => {
+    console.log("toggle on");
+    window.addEventListener("focusin", onFocusIn, { capture: true });
+  };
 
-  function attachAll() {
-    if (enabled) return false;
-    enabled = true;
-    textFields.forEach(attatchTo);
-    scan();
-    startObserver();
-  }
-  function dettachAll() {
-    if (!enabled) return true;
-    enabled = false;
-    stopObserver();
-    document.querySelectorAll(SELECTORS).forEach(dettachFrom);
-  }
+  const disable = () => {
+    console.log("toggle off");
+    window.removeEventListener("focusin", onFocusIn, { capture: true });
+    currentEl?.removeEventListener("input", onInput, { capture: true });
+    currentEl = null;
+  };
 
-  chrome.storage.session
-    .get("isActive")
-    .then(({ isActive }) => (isActive ? attachAll() : dettachAll()))
-    .catch((err) => {
-      console.error(err);
-    });
+  chrome?.storage?.session
+    ?.get("isActive")
+    .then(({ isActive }) => {
+      console.log(isActive);
+      if (isActive) enable();
+      else disable();
+    })
+    .catch(() => {});
 
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "session" && changes.isActive)
-      changes.isActive ? attachAll() : dettachAll();
+  chrome?.storage?.onChanged?.addListener((changes, area) => {
+    if (area === "session" && changes.isActive) {
+      console.log(changes.isActive, changes.isActive.newValue);
+      Number(changes.isActive.newValue) ? enable() : disable();
+    }
   });
 })();

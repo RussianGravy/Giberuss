@@ -1,52 +1,67 @@
 import { english_to_russian } from "./englishToRussianParser";
 
-let start = 0;
-const setStart = (s) => {
-  start = s;
-};
-
-export const onClick = (e) => {
-  const pos = e.currentTarget.selectionStart;
-  if (pos) {
-    setStart(pos);
-  } else {
-    setStart(0);
-  }
-};
-
-export const onKeyDown = (e) => {
-  if (
-    e.key == "ArrowUp" ||
-    e.key == "ArrowDown" ||
-    e.key == "ArrowLeft" ||
-    e.key == "ArrowRight"
-  ) {
-    const pos = e.currentTarget.selectionStart;
-    if (pos) {
-      setStart(pos);
-    } else {
-      setStart(0);
-    }
-  } else if (e.key == "BackSpace") {
-    setStart(start - 1);
-  }
-};
+const isLatin = (ch) => /[A-Za-z''-]/.test(ch);
 
 export const onInput = (e) => {
-  let inputTag = e.currentTarget;
+  const el = e.currentTarget;
+  const end = el.selectionEnd ?? 0;
 
-  let tStart = start;
-
-  console.log(e.data, tStart, inputTag.selectionEnd);
-
-  if (e.data == " ") {
-    console.log("hit a space!!");
-    let old_word = inputTag.value.substring(tStart, inputTag.selectionEnd);
-    let new_word = english_to_russian(old_word);
-    console.log(old_word, new_word);
-    inputTag.setRangeText(new_word, tStart, inputTag.selectionEnd, "end");
-    tStart = inputTag.selectionEnd;
+  if (!el.matches("INPUT, TEXTBOX")) {
+    console.log("Not an input or text field. Treating as content-editable");
+    handleContentEditable(e);
+    return;
   }
-  console.log(inputTag.selectionStart, inputTag.selectionEnd);
-  setStart(tStart);
+
+  const insertedSpace =
+    e instanceof InputEvent &&
+    e.inputType?.startsWith("insertText") &&
+    e.data == " ";
+
+  if (!insertedSpace) return;
+
+  let v = el.value;
+  let i = end - 2;
+
+  while (i >= 0 && isLatin(v[i])) i--;
+  const start = i + 1;
+
+  const old_word = v.substring(start, end);
+  const new_word = english_to_russian(old_word);
+
+  el.setRangeText(new_word, start, end, "end");
+};
+
+const handleContentEditable = (e) => {
+  const el = e.currentTarget;
+  const insertedSpace =
+    e instanceof InputEvent &&
+    e.inputType?.startsWith("insertText") &&
+    e.data == " ";
+
+  if (!insertedSpace) return;
+
+  const v = el.textContent;
+  const range = window.getSelection().getRangeAt(0);
+  let end = range.endOffset;
+  let i = end - 2;
+
+  while (i >= 0 && isLatin(v[i])) i--;
+  const start = i + 1;
+
+  console.log(start, end);
+  const old_word = v.substring(start, end);
+  const new_word = english_to_russian(old_word);
+  const textNode = document.createTextNode(new_word);
+
+  console.log(new_word);
+  const textRange = document.createRange();
+  textRange.setStart(range.startContainer, start);
+  textRange.setEnd(range.endContainer, end);
+  textRange.deleteContents();
+  textRange.insertNode(textNode);
+  window.getSelection().removeAllRanges();
+  // const afterSpace = document.createRange();
+  // afterSpace.setStart(range.startContainer, range.endOffset);
+  // afterSpace.collapse(true);
+  // window.getSelection().addRange(afterSpace);
 };
