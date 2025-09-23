@@ -7,7 +7,7 @@
   "manifest_version": 3,
   "action": {
     "default_popup": "public/index.html",
-    "default_icon": "icons/gibberuss_icon.png"
+    "default_icon": "icons/original_icon.png"
   },
   "content_scripts": [
     {
