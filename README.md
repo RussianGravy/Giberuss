@@ -11,9 +11,10 @@ Gibbiruss is a Chrome extension that provides live transliteration from English 
 ## Installation
 
 1. Clone or download this repository.
-2. Go to `chrome://extensions/` in your browser.
-3. Enable "Developer mode".
-4. Click "Load unpacked" and select the extension folder.
+2. Run `npm run build` to bundle the source JavaScript into the `dist/` folder.
+3. Go to `chrome://extensions/` in your browser.
+4. Enable "Developer mode".
+5. Click "Load unpacked" and select the extension folder.
 
 ## Usage
 
