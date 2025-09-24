@@ -6,7 +6,7 @@ export const onInput = (e) => {
   const el = e.currentTarget;
   const end = el.selectionEnd ?? 0;
 
-  if (!el.matches("INPUT, TEXTBOX")) {
+  if (!el.matches("INPUT, TEXTAREA")) {
     console.log("Not an input or text field. Treating as content-editable");
     handleContentEditable(e);
     return;
