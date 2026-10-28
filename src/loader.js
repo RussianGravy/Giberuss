@@ -1,5 +1,4 @@
-// minimal, focused-only wiring
-import { onInput } from "./eventHandlers";
+import { onBeforeInput } from "./eventHandlers";
 
 (() => {
   if (window.__myext_cs_installed__) return;
@@ -14,8 +13,6 @@ import { onInput } from "./eventHandlers";
     "textarea",
     '[contenteditable]:not([contenteditable="false"])',
   ].join(",");
-
-  let currentEl = null;
 
   const isElement = (n) => n && n.nodeType === Node.ELEMENT_NODE;
 
@@ -39,32 +36,33 @@ import { onInput } from "./eventHandlers";
   const qualify = (el) =>
     isElement(el) && el.matches?.(SELECTORS) && isEditable(el) && isVisible(el);
 
-  function onFocusIn(e) {
-    console.log("New element in focus");
+  // listening on window in the capture phase runs before any of the page's own
+  // beforeinput handlers, so the space can be cancelled before the editor sees it
+  function onBeforeInputCapture(e) {
     const target = e.composedPath ? e.composedPath()[0] : e.target;
-    if (target === currentEl || !qualify(target)) return; // already attached
-    currentEl = target;
-    console.log(target, " QUALIFIES!");
-    currentEl.addEventListener("input", onInput, { capture: true });
+    if (!qualify(target)) return;
+    onBeforeInput(e, target);
   }
 
   const enable = () => {
     console.log("toggle on");
-    window.addEventListener("focusin", onFocusIn, { capture: true });
+    window.addEventListener("beforeinput", onBeforeInputCapture, {
+      capture: true,
+    });
   };
 
   const disable = () => {
     console.log("toggle off");
-    window.removeEventListener("focusin", onFocusIn, { capture: true });
-    currentEl?.removeEventListener("input", onInput, { capture: true });
-    currentEl = null;
+    window.removeEventListener("beforeinput", onBeforeInputCapture, {
+      capture: true,
+    });
   };
 
   chrome?.storage?.session
     ?.get("isActive")
     .then(({ isActive }) => {
       console.log(isActive);
-      if (isActive) enable();
+      if (Number(isActive) === 1) enable();
       else disable();
     })
     .catch(() => {});

@@ -1,4 +1,4 @@
-import { onInput } from "../src/eventHandlers";
+import { onBeforeInput } from "../src/eventHandlers";
 
 console.log("well you're in the bundle");
 
@@ -39,6 +39,6 @@ toggle.addEventListener("change", async (e) => {
   console.log("toggleing to ", toggle.value);
 });
 
-document.querySelector('input[type="text"]').addEventListener("input", onInput);
+document.querySelector('input[type="text"]').addEventListener("beforeinput", onBeforeInput);
 
 copyButton.addEventListener("click", onClick);

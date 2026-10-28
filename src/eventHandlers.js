@@ -1,67 +1,92 @@
 import { english_to_russian } from "./englishToRussianParser";
 
 const isLatin = (ch) => /[A-Za-z''-]/.test(ch);
+const isSpace = (ch) => ch === " " || ch === " ";
 
-export const onInput = (e) => {
-  const el = e.currentTarget;
-  const end = el.selectionEnd ?? 0;
-
-  if (!el.matches("INPUT, TEXTAREA")) {
-    console.log("Not an input or text field. Treating as content-editable");
-    handleContentEditable(e);
-    return;
-  }
-
-  const insertedSpace =
-    e instanceof InputEvent &&
-    e.inputType?.startsWith("insertText") &&
-    e.data == " ";
-
-  if (!insertedSpace) return;
-
-  let v = el.value;
-  let i = end - 2;
-
+// start index of the Latin word that ends at `end`
+const wordStart = (v, end) => {
+  let i = end - 1;
   while (i >= 0 && isLatin(v[i])) i--;
-  const start = i + 1;
-
-  const old_word = v.substring(start, end);
-  const new_word = english_to_russian(old_word);
-
-  el.setRangeText(new_word, start, end, "end");
+  return i + 1;
 };
 
-const handleContentEditable = (e) => {
-  const el = e.currentTarget;
-  const insertedSpace =
-    e instanceof InputEvent &&
-    e.inputType?.startsWith("insertText") &&
-    e.data == " ";
+// Runs when a space is about to be inserted. The space is left alone so the
+// page's editor (Lexical on WhatsApp/Instagram, Telegram, etc.) records it
+// normally. Afterwards, "word " is selected and replaced with the Russian
+// version. If an editor rejects the replacement, the user still keeps the
+// space instead of losing it.
+export const onBeforeInput = (e, el = e.currentTarget) => {
+  if (e.inputType !== "insertText" || e.data !== " ") return;
+  if (!findWord(el, false)) return;
 
-  if (!insertedSpace) return;
+  // let the space go in first
+  setTimeout(() => {
+    const found = findWord(el, true);
+    if (!found) return;
+    found.select();
 
-  const v = el.textContent;
-  const range = window.getSelection().getRangeAt(0);
-  let end = range.endOffset;
-  let i = end - 2;
+    // wait for the editor to see the selection change before replacing it
+    setTimeout(() => {
+      const ok = document.execCommand(
+        "insertText",
+        false,
+        english_to_russian(found.word) + " "
+      );
+      if (!ok) console.warn("execCommand insertText failed", el);
+    }, 0);
+  }, 0);
+};
 
-  while (i >= 0 && isLatin(v[i])) i--;
-  const start = i + 1;
+// Finds the Latin word before the caret. With `afterSpace`, the caret is
+// expected to sit right after a space, and the selection covers "word ".
+// Returns { word, select } or null if there is nothing to transliterate.
+const findWord = (el, afterSpace) =>
+  el.matches("INPUT, TEXTAREA")
+    ? findWordInTextField(el, afterSpace)
+    : findWordInContentEditable(afterSpace);
 
-  console.log(start, end);
-  const old_word = v.substring(start, end);
-  const new_word = english_to_russian(old_word);
-  const textNode = document.createTextNode(new_word);
+const locate = (v, end, afterSpace) => {
+  if (afterSpace && !isSpace(v[end - 1])) return null;
+  const wordEnd = afterSpace ? end - 1 : end;
+  const start = wordStart(v, wordEnd);
+  if (start === wordEnd) return null;
+  return { start, word: v.substring(start, wordEnd) };
+};
 
-  console.log(new_word);
-  const textRange = document.createRange();
-  textRange.setStart(range.startContainer, start);
-  textRange.setEnd(range.endContainer, end);
-  textRange.deleteContents();
-  textRange.insertNode(textNode);
-  window.getSelection().removeAllRanges();
-  // const afterSpace = document.createRange();
-  // afterSpace.setStart(range.startContainer, range.endOffset);
-  // afterSpace.collapse(true);
-  // window.getSelection().addRange(afterSpace);
+const findWordInTextField = (el, afterSpace) => {
+  const end = el.selectionEnd;
+  if (end == null || el.selectionStart !== end) return null;
+
+  const loc = locate(el.value, end, afterSpace);
+  if (!loc) return null;
+
+  return {
+    word: loc.word,
+    select: () => el.setSelectionRange(loc.start, end),
+  };
+};
+
+const findWordInContentEditable = (afterSpace) => {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || !sel.isCollapsed) return null;
+
+  // offsets are relative to the caret's text node, so read only that node
+  const range = sel.getRangeAt(0);
+  const node = range.endContainer;
+  if (node.nodeType !== Node.TEXT_NODE) return null;
+
+  const end = range.endOffset;
+  const loc = locate(node.data, end, afterSpace);
+  if (!loc) return null;
+
+  return {
+    word: loc.word,
+    select: () => {
+      const word = document.createRange();
+      word.setStart(node, loc.start);
+      word.setEnd(node, end);
+      sel.removeAllRanges();
+      sel.addRange(word);
+    },
+  };
 };
