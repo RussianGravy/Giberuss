@@ -8,15 +8,6 @@ const common = {
       "process.env.NODE_ENV": JSON.stringify("development"), // or "production"
     }),
   ],
-  module: {
-    rules: [
-      {
-        test: /\.(js|jsx)$/,
-        exclude: /node_modules/,
-        use: "babel-loader",
-      },
-    ],
-  },
   devServer: {
     static: path.join(__dirname, "public"),
     port: 3000,
