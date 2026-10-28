@@ -27,14 +27,32 @@ export const onBeforeInput = (e, el = e.currentTarget) => {
 
     // wait for the editor to see the selection change before replacing it
     setTimeout(() => {
-      const ok = document.execCommand(
-        "insertText",
-        false,
-        english_to_russian(found.word) + " "
-      );
-      if (!ok) console.warn("execCommand insertText failed", el);
+      const ok = insertText(el, english_to_russian(found.word) + " ");
+      if (!ok) console.warn("insertText failed", el);
     }, 0);
   }, 0);
+};
+
+// execCommand doesn't fire beforeinput, which is the only place Slate
+// (Discord) updates its own copy of the text. Without it, Slate's copy and
+// the screen disagree and later edits like backspace fail. For Slate, announce
+// the insertion with our own beforeinput; Slate cancels it once handled.
+const insertText = (el, text) => {
+  if (el.closest('[data-slate-editor="true"]')) {
+    const handled = !el.dispatchEvent(
+      new InputEvent("beforeinput", {
+        inputType: "insertText",
+        data: text,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      })
+    );
+    // falling back to execCommand would break Slate's DOM structure, so
+    // leave the word untransliterated instead
+    return handled;
+  }
+  return document.execCommand("insertText", false, text);
 };
 
 // Finds the Latin word before the caret. With `afterSpace`, the caret is
